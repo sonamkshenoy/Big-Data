@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 import java.time.LocalDate;
 
 import org.json.JSONObject;
@@ -22,20 +23,8 @@ public class CountInstances {
                 private final static IntWritable one = new IntWritable(1);
                 private Text word = new Text();
 
-                public void map(Object key, Text value, Context context) throws IOException, InterruptedException{
-
-                        JSONObject jo = new JSONObject(value.toString());
-
-                        // Get current word
-                        String currentWord = jo.getString("word");
-
-
-                        // Get word passed in command line argument
-                        Configuration conf = context.getConfiguration();
-                        String passedWord = conf.get("givenWord");
-
-                        // Get timestamp
-                        String currentWordTimestamp = jo.getString("timestamp");
+                // function to check if the given timestamp falls on a Saturday or Sunday
+                public boolean timestamp_is_weekend(String wordTimestamp){
                         String timePart = currentWordTimestamp.substring(0, 10);
                         LocalDate dt = LocalDate.parse(timePart);
                         String dayOfWeek = dt.getDayOfWeek().name();
@@ -45,21 +34,74 @@ public class CountInstances {
                         String saturday = "SATURDAY";
                         String sunday = "SUNDAY";
 
+                        return (dayOfWeek.equals(saturday) || dayOfWeek.equals(sunday));
+                }
+
+                // function to check if a record is valid
+                public boolean is_valid_record(JSONObject record){
+                        // word should have alphabets and whitespace only.
+                        // Use Regex
+                        Pattern p1 = Pattern.compile("^[ A-Za-z]+$");
+                        Matcher m1 = p1.matcher(record.getString("word"));
+                        if(!m1.matches())
+                              return false;
+
+                        // countrycode should contain only 2 uppercase letters
+                        // Use Regex
+                        Pattern p2 = Pattern.compile("^[A-Z]{2}$");
+                        Matcher m2 = p2.matcher(record.getString("countrycode"));
+                        if(!m2.matches())
+                              return false;
+
+                        // recognized should be true or false
+                        // Extract as string and compare
+                        String recog = p2.matcher(record.getString("recognized"));
+                        if(!recog.equals("true") && !recog.equals("false"))
+                              return false;
+
+                        // key_id should be numeric string containing 16 characters only
+                        Pattern p3 = Pattern.compile("^[1-9]{16}$");
+                        Matcher m3 = p3.matcher(record.getString("countrycode"));
+                        if(!m3.matches())
+                              return false;
+
+                        return true;
+                }
+
+                public void map(Object key, Text value, Context context) throws IOException, InterruptedException{
+
+                        // Get current record (JSON)
+                        JSONObject jo = new JSONObject(value.toString());
+                        boolean is_valid = is_valid_record(jo);
+
+                        // Get current word
+                        String currentWord = jo.getString("word");
+
+                        // Get word passed in command line argument
+                        Configuration conf = context.getConfiguration();
+                        String passedWord = conf.get("givenWord");
+
+                        // Get timestamp
+                        String currentWordTimestamp = jo.getString("timestamp");
+                        boolean isWeekend = timestamp_is_weekend(currentWordTimestamp);
+
                         // find if reserved
-                        boolean isReserved = jo.getBoolean("recognized");
-                       	if(currentWord.equals(passedWord) && isReserved){
-                                Text thekey1 = new Text("Required");
-                                context.write(thekey1, one);
+                        boolean isRecognized = jo.getBoolean("recognized");
+
+                        if(is_valid){
+                          if(currentWord.equals(passedWord){
+                            if(isRecognized){
+                              Text thekey1 = new Text("Recognized");
+                              context.write(thekey1, one);
+                            }
+                            // Check if the non-recognized word falls on a Saturday or Sunday
+                            else if(!isRecognized && isWeekend){
+                              Text thekey2 = new Text("notRecognized");
+                              // Text thekey2 = new Text(dayOfWeek);
+                              context.write(thekey2, one);
+                            }
+                          }
                         }
-			else if(currentWord.equals(passedWord) && !isReserved && (dayOfWeek.equals(saturday) || dayOfWeek.equals(sunday))){
-                                Text thekey2 = new Text("notRequired");
-                                // Text thekey2 = new Text(dayOfWeek);
-                                context.write(thekey2, one);
-                        }
-
-                        //}
-
-
                 }
 
         }
@@ -76,9 +118,9 @@ public class CountInstances {
                         }
 
                         result.set(sum);
-                        Text dummy = new Text("");
+                        
+                        // We want only the value
                         context.write(NullWritable.get(), result);
-                        // context.write(key, result);
                 }
 
         }
