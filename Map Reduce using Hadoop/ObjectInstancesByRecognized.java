@@ -29,8 +29,6 @@ public class ObjectInstancesByRecognized {
                         LocalDate dt = LocalDate.parse(timePart);
                         String dayOfWeek = dt.getDayOfWeek().name();
 
-                        // String saturday = new String("SATURDAY");
-                        // String sunday = new String("SUNDAY");
                         String saturday = "SATURDAY";
                         String sunday = "SUNDAY";
 
@@ -54,7 +52,6 @@ public class ObjectInstancesByRecognized {
                               return false;
 
                         // recognized should be true or false
-                        // Extract as string and compare
                         boolean recog = record.getBoolean("recognized");
                         if(!(recog==true) && !(recog==false))
                               return false;
@@ -97,7 +94,6 @@ public class ObjectInstancesByRecognized {
                             // Check if the non-recognized word falls on a Saturday or Sunday
                             else if(!isRecognized && isWeekend){
                               Text thekey2 = new Text("notRecognized");
-                              // Text thekey2 = new Text(dayOfWeek);
                               context.write(thekey2, one);
                             }
                           }
@@ -131,20 +127,13 @@ public class ObjectInstancesByRecognized {
 
                 Configuration conf = new Configuration();
                 conf.set("givenWord", args[2]);
-                //addJarToDistributedCache(JSONObject.class,conf);
                 Job job = Job.getInstance(conf, "my instance count");
-                //job.addFileToClassPath(new Path("json-java.jar"));
                 job.setJarByClass(ObjectInstancesByRecognized.class);
-
                 job.setMapperClass(InstanceMapper.class);
-                // job.setCombinerClass(InstanceReducer.class);
                 job.setReducerClass(InstanceReducer.class);
-
                 job.setMapOutputKeyClass(Text.class);
                 job.setOutputKeyClass(NullWritable.class);
-                // job.setReduceOutputKeyClass(NullWritable.class);
                 job.setOutputValueClass(IntWritable.class);
-                
                 FileInputFormat.addInputPath(job, new Path(args[0]));
                 FileOutputFormat.setOutputPath(job, new Path(args[1]));
                 System.exit(job.waitForCompletion(true) ? 0 : 1);

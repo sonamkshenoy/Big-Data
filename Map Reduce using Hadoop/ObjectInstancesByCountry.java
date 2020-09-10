@@ -49,12 +49,11 @@ public class CountCountries {
                         Configuration conf = context.getConfiguration();
                         String passedWord = conf.get("givenWord");
 
-                        // Get Euclidean distance passed in command line argument
+                        // Get distance passed in command line argument
                         String passedDist = conf.get("givenDistance");
                         int passedDistance = Integer.parseInt(passedDist);
 
                         // Check if Euclidean distance calculated above is greater than passed distance
-                        // default value of boolean is false
                         boolean distanceIsGreater = false;
                         if(distanceFromOrigin > passedDistance){
                                 distanceIsGreater = true;
@@ -96,17 +95,12 @@ public class CountCountries {
                 Configuration conf = new Configuration();
                 conf.set("givenWord", args[2]);
                 conf.set("givenDistance", args[3]);
-                //addJarToDistributedCache(JSONObject.class,conf);
                 Job job = Job.getInstance(conf, "my country count");
-                //job.addFileToClassPath(new Path("json-java.jar"));
                 job.setJarByClass(CountCountries.class);
                 job.setMapperClass(InstanceMapper.class);
                 job.setCombinerClass(InstanceReducer.class);
-                // job.setMapOutputKeyClass(Text.class);
                 job.setReducerClass(InstanceReducer.class);
                 job.setOutputKeyClass(Text.class);
-
-                // job.setReduceOutputKeyClass(NullWritable.class);
                 job.setOutputValueClass(IntWritable.class);
                 FileInputFormat.addInputPath(job, new Path(args[0]));
                 FileOutputFormat.setOutputPath(job, new Path(args[1]));
