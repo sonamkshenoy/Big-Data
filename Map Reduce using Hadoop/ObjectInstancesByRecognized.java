@@ -1,6 +1,6 @@
 import java.io.IOException;
 import java.util.StringTokenizer;
-import java.util.regex.Pattern;
+import java.util.regex.*;
 import java.time.LocalDate;
 
 import org.json.JSONObject;
@@ -16,7 +16,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 
-public class CountInstances {
+public class ObjectInstancesByRecognized {
 
         public static class InstanceMapper extends Mapper<Object, Text, Text, IntWritable>{
 
@@ -25,7 +25,7 @@ public class CountInstances {
 
                 // function to check if the given timestamp falls on a Saturday or Sunday
                 public boolean timestamp_is_weekend(String wordTimestamp){
-                        String timePart = currentWordTimestamp.substring(0, 10);
+                        String timePart = wordTimestamp.substring(0, 10);
                         LocalDate dt = LocalDate.parse(timePart);
                         String dayOfWeek = dt.getDayOfWeek().name();
 
@@ -55,13 +55,13 @@ public class CountInstances {
 
                         // recognized should be true or false
                         // Extract as string and compare
-                        String recog = p2.matcher(record.getString("recognized"));
-                        if(!recog.equals("true") && !recog.equals("false"))
+                        boolean recog = record.getBoolean("recognized");
+                        if(!(recog==true) && !(recog==false))
                               return false;
 
                         // key_id should be numeric string containing 16 characters only
-                        Pattern p3 = Pattern.compile("^[1-9]{16}$");
-                        Matcher m3 = p3.matcher(record.getString("countrycode"));
+                        Pattern p3 = Pattern.compile("^[0-9]{16}$");
+                        Matcher m3 = p3.matcher(record.getString("key_id"));
                         if(!m3.matches())
                               return false;
 
@@ -89,7 +89,7 @@ public class CountInstances {
                         boolean isRecognized = jo.getBoolean("recognized");
 
                         if(is_valid){
-                          if(currentWord.equals(passedWord){
+                          if(currentWord.equals(passedWord)){
                             if(isRecognized){
                               Text thekey1 = new Text("Recognized");
                               context.write(thekey1, one);
@@ -101,10 +101,11 @@ public class CountInstances {
                               context.write(thekey2, one);
                             }
                           }
-                        }
+                       }
                 }
 
         }
+
 
         public static class InstanceReducer extends Reducer<Text, IntWritable, NullWritable, IntWritable>{
 
@@ -118,7 +119,7 @@ public class CountInstances {
                         }
 
                         result.set(sum);
-                        
+
                         // We want only the value
                         context.write(NullWritable.get(), result);
                 }
@@ -133,15 +134,17 @@ public class CountInstances {
                 //addJarToDistributedCache(JSONObject.class,conf);
                 Job job = Job.getInstance(conf, "my instance count");
                 //job.addFileToClassPath(new Path("json-java.jar"));
-                job.setJarByClass(CountInstances.class);
+                job.setJarByClass(ObjectInstancesByRecognized.class);
+
                 job.setMapperClass(InstanceMapper.class);
                 // job.setCombinerClass(InstanceReducer.class);
-                job.setMapOutputKeyClass(Text.class);
                 job.setReducerClass(InstanceReducer.class);
-                job.setOutputKeyClass(NullWritable.class);
 
+                job.setMapOutputKeyClass(Text.class);
+                job.setOutputKeyClass(NullWritable.class);
                 // job.setReduceOutputKeyClass(NullWritable.class);
                 job.setOutputValueClass(IntWritable.class);
+                
                 FileInputFormat.addInputPath(job, new Path(args[0]));
                 FileOutputFormat.setOutputPath(job, new Path(args[1]));
                 System.exit(job.waitForCompletion(true) ? 0 : 1);
@@ -149,7 +152,3 @@ public class CountInstances {
         }
 
 }
-
-
-
-// NOT currentWord == passedWord - this gave no ouput! Have to use String ".equals()"
