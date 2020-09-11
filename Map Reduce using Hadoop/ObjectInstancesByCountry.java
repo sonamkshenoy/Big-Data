@@ -1,10 +1,14 @@
 import java.io.IOException;
 import java.util.StringTokenizer;
+
+// Library to convert timestamp to Java LocalDate
 import java.time.LocalDate;
 
+// Libraries to parse and perform operations on JSON
 import org.json.JSONObject;
 import org.json.JSONArray;
 
+// Hadoop Libraries
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -17,19 +21,35 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 
-public class CountCountries {
+public class ObjectInstancesByCountry {
 
         public static class InstanceMapper extends Mapper<Object, Text, Text, IntWritable>{
 
                 private final static IntWritable one = new IntWritable(1);
                 private Text word = new Text();
 
+                public boolean distanceIsLonger(int firstXCood, int firstYCood, int passedDistance){
+
+
+                        // Calculate Euclidean distance of point in stroke from origin
+                        double xdist = Math.abs((double)firstXCood-0);
+                        double ydist = Math.abs((double)firstYCood-0);
+                        double distanceFromOrigin = Math.sqrt((ydist*ydist)+(xdist*xdist));
+
+                        // Check if the Euclidean distance calculated above is greater than passed distance
+                        if(distanceFromOrigin > passedDistance){
+                                return true;
+                        }
+
+                        return false;
+
+                }
+
                 public void map(Object key, Text value, Context context) throws IOException, InterruptedException{
 
-                        JSONObject jo = new JSONObject(value.toString());
+                        Configuration conf = context.getConfiguration();
 
-                        // Get current word
-                        String currentWord = jo.getString("word");
+                        JSONObject jo = new JSONObject(value.toString());
 
                         // Get the strokes of the current record
                         JSONArray currentStrokes = (JSONArray)jo.get("drawing");
@@ -39,25 +59,21 @@ public class CountCountries {
                         JSONArray ycood = (JSONArray)firstStroke.get(1);
                         int firstYCood = (int)ycood.get(0);
 
-                        // Calculate distance of above point from origin
-                        double xdist = Math.abs((double)firstXCood-0);
-                        double ydist = Math.abs((double)firstYCood-0);
-                        double distanceFromOrigin = Math.sqrt((ydist*ydist)+(xdist*xdist));
 
-
-                        // Get word passed in command line argument
-                        Configuration conf = context.getConfiguration();
-                        String passedWord = conf.get("givenWord");
-
-                        // Get distance passed in command line argument
+                        // Get the distance passed in command line argument
                         String passedDist = conf.get("givenDistance");
                         int passedDistance = Integer.parseInt(passedDist);
 
-                        // Check if Euclidean distance calculated above is greater than passed distance
-                        boolean distanceIsGreater = false;
-                        if(distanceFromOrigin > passedDistance){
-                                distanceIsGreater = true;
-                        }
+                        // Check if the distance of stroke is greater than the distance passed in command line
+                        boolean distanceIsGreater = distanceIsLonger(firstXCood, firstYCood, passedDistance);
+
+
+
+                        // Get current word
+                        String currentWord = jo.getString("word");
+
+                        // Get word passed in command line argument
+                        String passedWord = conf.get("givenWord");
 
                         // Get countrycode
                         String countrycode = jo.getString("countrycode");
@@ -77,6 +93,7 @@ public class CountCountries {
 
                 public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException{
 
+                        // Count
                         int sum = 0;
                         for(IntWritable val:values){
                                 sum += val.get();
@@ -93,18 +110,22 @@ public class CountCountries {
         public static void main(String[] args) throws Exception{
 
                 Configuration conf = new Configuration();
+
                 // After input and output path:
-                // First word passed in command line is the word
+                // First word passed in command line is the word whose count is to be found based on the conditions
                 // Second word is the minimum distance
                 conf.set("givenWord", args[2]);
                 conf.set("givenDistance", args[3]);
+
+                // Map Reduce configirations
                 Job job = Job.getInstance(conf, "my country count");
-                job.setJarByClass(CountCountries.class);
+                job.setJarByClass(ObjectInstancesByCountry.class);
                 job.setMapperClass(InstanceMapper.class);
                 job.setCombinerClass(InstanceReducer.class);
                 job.setReducerClass(InstanceReducer.class);
                 job.setOutputKeyClass(Text.class);
                 job.setOutputValueClass(IntWritable.class);
+
                 FileInputFormat.addInputPath(job, new Path(args[0]));
                 FileOutputFormat.setOutputPath(job, new Path(args[1]));
                 System.exit(job.waitForCompletion(true) ? 0 : 1);

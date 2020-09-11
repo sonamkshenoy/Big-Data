@@ -1,9 +1,16 @@
 import java.io.IOException;
 import java.util.StringTokenizer;
+
+// REGEX
 import java.util.regex.*;
+
+// Library to convert timestamp to Java LocalDate
 import java.time.LocalDate;
 
+// Library to parse JSON file
 import org.json.JSONObject;
+
+// Hadoop libraries
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -25,6 +32,7 @@ public class ObjectInstancesByRecognized {
 
                 // function to check if the given timestamp falls on a Saturday or Sunday
                 public boolean timestamp_is_weekend(String wordTimestamp){
+                        // Only time part of timestamp required to get the LocalDate
                         String timePart = wordTimestamp.substring(0, 10);
                         LocalDate dt = LocalDate.parse(timePart);
                         String dayOfWeek = dt.getDayOfWeek().name();
@@ -37,6 +45,7 @@ public class ObjectInstancesByRecognized {
 
                 // function to check if a record is valid
                 public boolean is_valid_record(JSONObject record){
+                  
                         // word should have alphabets and whitespace only.
                         // Use Regex
                         Pattern p1 = Pattern.compile("^[ A-Za-z]+$");
@@ -82,7 +91,7 @@ public class ObjectInstancesByRecognized {
                         String currentWordTimestamp = jo.getString("timestamp");
                         boolean isWeekend = timestamp_is_weekend(currentWordTimestamp);
 
-                        // find if recognized
+                        // Check if recognized
                         boolean isRecognized = jo.getBoolean("recognized");
 
                         // 2 different keys based on 2 different conditions
@@ -104,13 +113,14 @@ public class ObjectInstancesByRecognized {
         }
 
 
-        // Change output key value in function header to Null, since you don't want to print key
+        // Change data type of output key of reducer in function header to Null, since you don't want to print key (only value)
         public static class InstanceReducer extends Reducer<Text, IntWritable, NullWritable, IntWritable>{
 
                 private IntWritable result = new IntWritable();
 
                 public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException{
 
+                        // Get total count
                         int sum = 0;
                         for(IntWritable val:values){
                                 sum += val.get();
@@ -128,17 +138,22 @@ public class ObjectInstancesByRecognized {
         public static void main(String[] args) throws Exception{
 
                 Configuration conf = new Configuration();
-                // Given word is passed in command line
+
+                // Given word is passed in command line (the word whose count is to be checked based on the conditions)
                 conf.set("givenWord", args[2]);
+
+                // Map Reduce Configurations
                 Job job = Job.getInstance(conf, "my instance count");
                 job.setJarByClass(ObjectInstancesByRecognized.class);
                 job.setMapperClass(InstanceMapper.class);
                 job.setReducerClass(InstanceReducer.class);
                 // Let data type of mapper output key be Text
                 job.setMapOutputKeyClass(Text.class);
-                // Change data type of output key expected from reducer to Null, since we don't wan't to print anything for key
+
+                // Reflect change in data type of output key expected from reducer to Null, since we don't wan't to print anything for key
                 job.setOutputKeyClass(NullWritable.class);
                 job.setOutputValueClass(IntWritable.class);
+
                 FileInputFormat.addInputPath(job, new Path(args[0]));
                 FileOutputFormat.setOutputPath(job, new Path(args[1]));
                 System.exit(job.waitForCompletion(true) ? 0 : 1);
