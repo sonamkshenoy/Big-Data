@@ -82,9 +82,10 @@ public class ObjectInstancesByRecognized {
                         String currentWordTimestamp = jo.getString("timestamp");
                         boolean isWeekend = timestamp_is_weekend(currentWordTimestamp);
 
-                        // find if reserved
+                        // find if recognized
                         boolean isRecognized = jo.getBoolean("recognized");
 
+                        // 2 different keys based on 2 different conditions
                         if(is_valid){
                           if(currentWord.equals(passedWord)){
                             if(isRecognized){
@@ -103,6 +104,7 @@ public class ObjectInstancesByRecognized {
         }
 
 
+        // Change output key value in function header to Null, since you don't want to print key
         public static class InstanceReducer extends Reducer<Text, IntWritable, NullWritable, IntWritable>{
 
                 private IntWritable result = new IntWritable();
@@ -116,7 +118,7 @@ public class ObjectInstancesByRecognized {
 
                         result.set(sum);
 
-                        // We want only the value
+                        // We want only the value, hence write Null for key.
                         context.write(NullWritable.get(), result);
                 }
 
@@ -126,12 +128,15 @@ public class ObjectInstancesByRecognized {
         public static void main(String[] args) throws Exception{
 
                 Configuration conf = new Configuration();
+                // Given word is passed in command line
                 conf.set("givenWord", args[2]);
                 Job job = Job.getInstance(conf, "my instance count");
                 job.setJarByClass(ObjectInstancesByRecognized.class);
                 job.setMapperClass(InstanceMapper.class);
                 job.setReducerClass(InstanceReducer.class);
+                // Let data type of mapper output key be Text
                 job.setMapOutputKeyClass(Text.class);
+                // Change data type of output key expected from reducer to Null, since we don't wan't to print anything for key
                 job.setOutputKeyClass(NullWritable.class);
                 job.setOutputValueClass(IntWritable.class);
                 FileInputFormat.addInputPath(job, new Path(args[0]));

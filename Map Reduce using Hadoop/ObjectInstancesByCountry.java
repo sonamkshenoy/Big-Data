@@ -93,6 +93,9 @@ public class CountCountries {
         public static void main(String[] args) throws Exception{
 
                 Configuration conf = new Configuration();
+                // After input and output path:
+                // First word passed in command line is the word
+                // Second word is the minimum distance
                 conf.set("givenWord", args[2]);
                 conf.set("givenDistance", args[3]);
                 Job job = Job.getInstance(conf, "my country count");
