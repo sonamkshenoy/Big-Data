@@ -51,19 +51,14 @@ jar cf <name of jar>.jar <name of java file>*.class
 bin/hdfs dfs -mkdir -p input
 bin/hdfs dfs -put input/plane_carriers.ndjson input
 ```
-5. Execute    
-
-For Task 1:
-```
-bin/hadoop jar <path to jar file> <class name> /user/ubuntu/input/plane_carriers.ndjson user/ubuntu/output <word>
-```
-OR    
-
-For Task 2:
-```
-bin/hadoop jar <path to jar file> CountCountriesPart2 /user/ubuntu/input/plane_carriers.ndjson user/ubuntu/output <word> <distance>
-```
+5. Execute   
+For Task 1:  
+`bin/hadoop jar <path to jar file> <class name> /user/ubuntu/input/plane_carriers.ndjson user/ubuntu/output <word>`
+OR   
+For Task 2:  
+`bin/hadoop jar <path to jar file> CountCountriesPart2 /user/ubuntu/input/plane_carriers.ndjson user/ubuntu/output <word> <distance>`   
 Example: word = airplane and distance = 100   
+
 6. Finally, the output can be seen as:  
 ```
 bin/hdfs dfs -cat user/ubuntu/output/part-r-00000
