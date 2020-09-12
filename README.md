@@ -56,7 +56,7 @@ For Task 1:
 `bin/hadoop jar <path to jar file> <class name> /user/ubuntu/input/plane_carriers.ndjson user/ubuntu/output <word>`
 OR   
 For Task 2:  
-`bin/hadoop jar <path to jar file> CountCountriesPart2 /user/ubuntu/input/plane_carriers.ndjson user/ubuntu/output <word> <distance>`   
+`bin/hadoop jar <path to jar file> <class name> /user/ubuntu/input/plane_carriers.ndjson user/ubuntu/output <word> <distance>`   
 Example: word = airplane and distance = 100   
 
 6. Finally, the output can be seen as:  
