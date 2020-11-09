@@ -39,10 +39,12 @@ if __name__ == "__main__":
     if(finalCount):
         for i in finalCount:
             if(finalCount[i]>0):
-                print("%s,%0.5f"%(i, finalCount[i]))
+                # print("%s,%0.5f"%(i, finalCount[i]))
+                print(i, finalCount[i], sep=",")
 
     else:
-        print("%0.5f"%(0))
+        # print("%0.5f"%(0))
+        print(0)
 
     spark.stop()
 
