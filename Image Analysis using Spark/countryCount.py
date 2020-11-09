@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     countryCount = {}
     for i in count:
-       countryCount[i.asDict()['countrycode']] = i.asDict()['count(countrycode)']
+        countryCount[i.asDict()['countrycode']] = i.asDict()['count(countrycode)']
 
     finalCount = {k:v for k,v in sorted(countryCount.items(), key=lambda item: item[0])}
 
