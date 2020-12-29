@@ -63,3 +63,13 @@ Example: word = airplane and distance = 100
 ```
 bin/hdfs dfs -cat user/ubuntu/output/part-r-00000
 ```
+
+
+
+## Page Rank using Hadoop  
+
+
+## Image Analysis using Spark  
+
+
+
